@@ -19,7 +19,7 @@ pip install mlagents==0.18.1
 - Most likely will have to enter safemode since we have a custom ml-agent repo
 - Open package manager
 - Click plus sign -> add package from disk
-- navigate to ml-agents/com.unity.ml-agents and select package.json
+- navigate to the ml-agents that you cloned previously. ml-agents/com.unity.ml-agents and select package.json. The defualt ml-agents is too new 
 - Unity crashed but after a restart, the project loaded. 
 - File -> open scene; ai is the nomral interface, training has a farm of robots.
 - Running the scene, then clicking on the robot base and changing the max step to 1 starts the process. 
