@@ -5,7 +5,7 @@ public class Axis : MonoBehaviour
 {
    public Vector3 rotationAxis;
    public Vector3 beginLocation;
-   
+
    public float MinAngle;
    public float MaxAngle;
    private void Awake()
