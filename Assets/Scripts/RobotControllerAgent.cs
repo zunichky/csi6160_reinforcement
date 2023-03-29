@@ -92,20 +92,19 @@ public class RobotControllerAgent : Agent
    public override void OnActionReceived(float[] vectorAction)
    {
       angles = vectorAction;
+      // Translate the floating point actions into Degrees of rotation for each axis
+      armAxes[0].transform.localRotation =
+         Quaternion.AngleAxis(angles[0] * 180f, armAxes[0].GetComponent<Axis>().rotationAxis);
+      armAxes[1].transform.localRotation =
+         Quaternion.AngleAxis(angles[1] * 90f, armAxes[1].GetComponent<Axis>().rotationAxis);
+      armAxes[2].transform.localRotation =
+         Quaternion.AngleAxis(angles[2] * 180f, armAxes[2].GetComponent<Axis>().rotationAxis);
+      armAxes[3].transform.localRotation =
+         Quaternion.AngleAxis(angles[3] * 90f, armAxes[3].GetComponent<Axis>().rotationAxis);
+      armAxes[4].transform.localRotation =
+         Quaternion.AngleAxis(angles[4] * 90f, armAxes[4].GetComponent<Axis>().rotationAxis);
       if (trainingMode)
       {
-         // Translate the floating point actions into Degrees of rotation for each axis
-         armAxes[0].transform.localRotation =
-            Quaternion.AngleAxis(angles[0] * 180f, armAxes[0].GetComponent<Axis>().rotationAxis);
-         armAxes[1].transform.localRotation =
-            Quaternion.AngleAxis(angles[1] * 90f, armAxes[1].GetComponent<Axis>().rotationAxis);
-         armAxes[2].transform.localRotation =
-            Quaternion.AngleAxis(angles[2] * 180f, armAxes[2].GetComponent<Axis>().rotationAxis);
-         armAxes[3].transform.localRotation =
-            Quaternion.AngleAxis(angles[3] * 90f, armAxes[3].GetComponent<Axis>().rotationAxis);
-         armAxes[4].transform.localRotation =
-            Quaternion.AngleAxis(angles[4] * 90f, armAxes[4].GetComponent<Axis>().rotationAxis);
-
          float distance = Vector3.Distance(endEffector.transform.TransformPoint(Vector3.zero),
             nearestComponent.transform.position);
          float diff = beginDistance - distance;
