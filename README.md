@@ -13,6 +13,8 @@ cd csi6160_reinforcement
 python -m venv venv
 source venv/bin/activate
 pip install mlagents==0.18.1
+pip install protobuf==3.20.*
+pip install mxnet-mkl==1.6.0 numpy==1.23.1
 ```
 ## Unity Setup
 - open csi6160_reinforcement in unity hub
@@ -24,3 +26,11 @@ pip install mlagents==0.18.1
 - File -> open scene; ai is the nomral interface, training has a farm of robots.
 - Running the scene, then clicking on the robot base and changing the max step to 1 starts the process. 
 <br> Credit: https://github.com/rkandas/RobotArmMLAgentUnity
+
+## Training  
+In a terminal window, start a learning session  
+```
+source venv/bin/activate
+mlagents-learn trainer_config.yaml --run-id custom_train
+```
+In robotcontroller, make sure train is selected. THere is also a scene that will train a farm of robots
