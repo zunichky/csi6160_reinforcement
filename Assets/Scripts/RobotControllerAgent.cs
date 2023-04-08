@@ -12,6 +12,8 @@ public class RobotControllerAgent : Agent
    private GameObject[] armAxes;
    [SerializeField] 
    private GameObject endEffector;
+    [SerializeField]
+    private int numberOfRuns;
 
    public bool trainingMode;
    private bool inFrontOfComponent = false;
@@ -24,6 +26,11 @@ public class RobotControllerAgent : Agent
    bool  inrange2 = false, inrange3 = false, inrange4 = false, inrange5 = false;
    private float baseAngle;
    private const float stepPenalty = -0.0001f;
+    private int runCount = 0;
+    private string resultsFile = "results.csv";
+
+   public Results results = new Results();
+    public EnvironmentInstance cur_run = null;
    private void Start()
    {
       
@@ -56,6 +63,14 @@ public class RobotControllerAgent : Agent
 
    private void UpdateNearestComponent()
    {
+        if (!trainingMode)
+        {
+            if (runCount >= numberOfRuns)
+            {
+                endRun();
+            }
+        }
+
       if (trainingMode)
       {
          inFrontOfComponent = UnityEngine.Random.value > 0.5f;
@@ -71,13 +86,40 @@ public class RobotControllerAgent : Agent
       
       baseAngle = Mathf.Atan2( transform.position.x - nearestComponent.transform.position.x, transform.position.z - nearestComponent.transform.position.z) * Mathf.Rad2Deg;
       if (baseAngle < 0) baseAngle = baseAngle + 360f;
+
+        if (!trainingMode)
+        {
+            if (cur_run != null)
+            {
+                // Only log results if we don't collide after the first couple movements
+                if (cur_run.totalMovements > 3)
+                {
+                    results.results.Add(cur_run);
+                    cur_run.PrintResults();
+                    cur_run.WriteResults(resultsFile);
+                    runCount += 1;
+                }
+
+            }
+            cur_run = new EnvironmentInstance(nearestComponent.transform.position);
+        }
    }
 
-   /// <summary>
-   /// Markov Decision Process - Observes state for the current time step
-   /// </summary>
-   /// <param name="sensor"></param>
-   public override void CollectObservations(VectorSensor sensor)
+    private void endRun()
+    {
+        #if UNITY_EDITOR
+                // Application.Quit() does not work in the editor so
+                // UnityEditor.EditorApplication.isPlaying need to be set to false to end the game
+                UnityEditor.EditorApplication.isPlaying = false;
+        #else
+                 Application.Quit();
+        #endif
+    }
+    /// <summary>
+    /// Markov Decision Process - Observes state for the current time step
+    /// </summary>
+    /// <param name="sensor"></param>
+    public override void CollectObservations(VectorSensor sensor)
    {
       sensor.AddObservation(angles);
       sensor.AddObservation(transform.position.normalized);
@@ -122,15 +164,25 @@ public class RobotControllerAgent : Agent
          }
          AddReward(stepPenalty);
       }
+        cur_run.totalMovements += 1;
    }
 
    public void GroundHitPenalty()
    {
+        //Debug.LogWarning("Ground hit penalty");
+        cur_run.groundHit = true;
       AddReward(-1f);
       EndEpisode();
    }
+    public void SelfHitPenalty()
+    {
+        //Debug.LogWarning("Self hit penalty");
+        cur_run.selfHit = true;
+        AddReward(-1f);
+        EndEpisode();
+    }
 
-   private void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter(Collider other)
    {
       JackpotReward(other);
    }
@@ -145,9 +197,13 @@ public class RobotControllerAgent : Agent
          float reward = SuccessReward + bonus;
          if (float.IsInfinity(reward) || float.IsNaN(reward)) return;
           Debug.LogWarning("Great! Component reached. Positive reward:" + reward );
-         AddReward(reward);
-         //EndEpisode();
-         UpdateNearestComponent();
+        if (trainingMode)
+        {
+            AddReward(reward);
+        }
+            //EndEpisode();
+            cur_run.objectHit = true;
+            UpdateNearestComponent();
       }
    }
    

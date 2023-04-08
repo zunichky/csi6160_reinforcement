@@ -12,10 +12,9 @@ public class EndEffector : MonoBehaviour
         }
         else if (other.transform.CompareTag("Ground"))
         {
-            Debug.LogWarning("Robot Controller penalty");
 
             if(parentAgent != null)
-                parentAgent.GroundHitPenalty();
+                parentAgent.SelfHitPenalty();
         }
     }
 }
