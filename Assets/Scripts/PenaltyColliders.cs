@@ -10,6 +10,7 @@ public class PenaltyColliders : MonoBehaviour
     {
         if (other.transform.CompareTag("RobotInternal"))
         {
+            Debug.LogWarning("RobotInternal Collider");
             if(parentAgent != null)
                 parentAgent.GroundHitPenalty();
         }
