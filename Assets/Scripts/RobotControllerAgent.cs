@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data.Common;
 using System.Linq;
+using System.Threading;
 using Unity.MLAgents;
 using Unity.MLAgents.Sensors;
 using UnityEngine;
@@ -15,7 +16,9 @@ public class RobotControllerAgent : Agent
     [SerializeField]
     private int numberOfRuns;
 
+   public float rotateTune = 20f;
    public bool trainingMode;
+   public bool writeLog = true;
    private bool inFrontOfComponent = false;
    public GameObject nearestComponent;
    private Ray rayToTest = new Ray();
@@ -28,6 +31,8 @@ public class RobotControllerAgent : Agent
    private const float stepPenalty = -0.0001f;
     private int runCount = 0;
     private string resultsFile = "results.csv";
+   private bool rotateCompelete = true;
+   private Quaternion[] pendingRotations = new Quaternion[5];
 
    public Results results = new Results();
     public EnvironmentInstance cur_run = null;
@@ -40,7 +45,6 @@ public class RobotControllerAgent : Agent
    {
       ResetAllAxis();
       MoveToSafeRandomPosition();
-      if (!trainingMode) MaxStep = 0;
    }
 
    private void ResetAllAxis()
@@ -54,8 +58,10 @@ public class RobotControllerAgent : Agent
 
    public override void OnEpisodeBegin()
    {
-      if(trainingMode)
-         ResetAllAxis();
+      rotateCompelete = true;
+
+      //if(trainingMode)
+      ResetAllAxis();
 
       MoveToSafeRandomPosition();
       UpdateNearestComponent();
@@ -63,6 +69,29 @@ public class RobotControllerAgent : Agent
 
    private void UpdateNearestComponent()
    {
+         if (!trainingMode)
+         {
+            if (cur_run != null)
+            {
+                  // Only log results if we don't collide after the first couple movements
+                  if (cur_run.totalMovements > 3)
+                  {
+                     if (cur_run.totalMovements >= (MaxStep))
+                     {
+                        cur_run.maxSteps = true;
+                     }
+                     results.results.Add(cur_run);
+                     cur_run.PrintResults();
+                     if (writeLog)
+                     {
+                        cur_run.WriteResults(resultsFile);
+                     }
+                     runCount += 1;
+               }
+
+            }
+            cur_run = new EnvironmentInstance(nearestComponent.transform.position);
+         }
         if (!trainingMode)
         {
             if (runCount >= numberOfRuns)
@@ -86,23 +115,6 @@ public class RobotControllerAgent : Agent
       
       baseAngle = Mathf.Atan2( transform.position.x - nearestComponent.transform.position.x, transform.position.z - nearestComponent.transform.position.z) * Mathf.Rad2Deg;
       if (baseAngle < 0) baseAngle = baseAngle + 360f;
-
-        if (!trainingMode)
-        {
-            if (cur_run != null)
-            {
-                // Only log results if we don't collide after the first couple movements
-                if (cur_run.totalMovements > 3)
-                {
-                    results.results.Add(cur_run);
-                    cur_run.PrintResults();
-                    cur_run.WriteResults(resultsFile);
-                    runCount += 1;
-                }
-
-            }
-            cur_run = new EnvironmentInstance(nearestComponent.transform.position);
-        }
    }
 
     private void endRun()
@@ -121,19 +133,20 @@ public class RobotControllerAgent : Agent
     /// <param name="sensor"></param>
     public override void CollectObservations(VectorSensor sensor)
    {
-      sensor.AddObservation(angles);
-      sensor.AddObservation(transform.position.normalized);
-      sensor.AddObservation(nearestComponent.transform.position.normalized);
-      sensor.AddObservation(endEffector.transform.TransformPoint(Vector3.zero).normalized);
+      sensor.AddObservation(angles); //5
+      sensor.AddObservation(transform.position.normalized); //3
+      sensor.AddObservation(nearestComponent.transform.position.normalized); //3
+      sensor.AddObservation(endEffector.transform.TransformPoint(Vector3.zero).normalized); //3
       Vector3 toComponent = (nearestComponent.transform.position - endEffector.transform.TransformPoint(Vector3.zero));
-      sensor.AddObservation(toComponent.normalized);
-      sensor.AddObservation(Vector3.Distance(nearestComponent.transform.position,endEffector.transform.TransformPoint(Vector3.zero)));
-      sensor.AddObservation(StepCount / 5000);
+      sensor.AddObservation(toComponent.normalized); //3
+      sensor.AddObservation(Vector3.Distance(nearestComponent.transform.position,endEffector.transform.TransformPoint(Vector3.zero))); //1
+      sensor.AddObservation(StepCount / MaxStep); //1
    }
 
    public override void OnActionReceived(float[] vectorAction)
    {
       angles = vectorAction;
+      /*
       // Translate the floating point actions into Degrees of rotation for each axis
       armAxes[0].transform.localRotation =
          Quaternion.AngleAxis(angles[0] * 180f, armAxes[0].GetComponent<Axis>().rotationAxis);
@@ -145,6 +158,18 @@ public class RobotControllerAgent : Agent
          Quaternion.AngleAxis(angles[3] * 90f, armAxes[3].GetComponent<Axis>().rotationAxis);
       armAxes[4].transform.localRotation =
          Quaternion.AngleAxis(angles[4] * 90f, armAxes[4].GetComponent<Axis>().rotationAxis);
+      */
+      armAxes[0].transform.localRotation = Quaternion.RotateTowards(armAxes[0].transform.localRotation,  
+      Quaternion.AngleAxis(angles[0] * 180f, armAxes[0].GetComponent<Axis>().rotationAxis), rotateTune * Time.deltaTime);
+      armAxes[1].transform.localRotation = Quaternion.RotateTowards(armAxes[1].transform.localRotation,  
+         Quaternion.AngleAxis(angles[1] * 90f, armAxes[1].GetComponent<Axis>().rotationAxis), rotateTune * Time.deltaTime);
+      armAxes[2].transform.localRotation = Quaternion.RotateTowards(armAxes[2].transform.localRotation,  
+         Quaternion.AngleAxis(angles[2] * 180f, armAxes[2].GetComponent<Axis>().rotationAxis), rotateTune * Time.deltaTime);   
+      armAxes[3].transform.localRotation = Quaternion.RotateTowards(armAxes[3].transform.localRotation,  
+         Quaternion.AngleAxis(angles[3] * 90f, armAxes[3].GetComponent<Axis>().rotationAxis), rotateTune * Time.deltaTime);
+      armAxes[4].transform.localRotation = Quaternion.RotateTowards(armAxes[4].transform.localRotation,  
+         Quaternion.AngleAxis(angles[4] * 90f, armAxes[4].GetComponent<Axis>().rotationAxis), rotateTune * Time.deltaTime);
+
       if (trainingMode)
       {
          float distance = Vector3.Distance(endEffector.transform.TransformPoint(Vector3.zero),
@@ -162,24 +187,35 @@ public class RobotControllerAgent : Agent
             AddReward(diff);
             prevBest = distance;
          }
-         AddReward(stepPenalty);
+         //AddReward(stepPenalty);
       }
-        cur_run.totalMovements += 1;
+      else
+      {
+         cur_run.totalMovements += 1;
+      }
    }
 
    public void GroundHitPenalty()
    {
-        //Debug.LogWarning("Ground hit penalty");
-        cur_run.groundHit = true;
+      //Debug.LogWarning("Ground hit penalty");
+      if (!trainingMode)
+      {
+         cur_run.groundHit = true;
+      }
+      
       AddReward(-1f);
       EndEpisode();
    }
     public void SelfHitPenalty()
     {
-        //Debug.LogWarning("Self hit penalty");
-        cur_run.selfHit = true;
-        AddReward(-1f);
-        EndEpisode();
+      //Debug.LogWarning("Self hit penalty");
+      if (!trainingMode)
+      {
+         cur_run.selfHit = true;
+      }
+
+      AddReward(-1f);
+      EndEpisode();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -201,8 +237,13 @@ public class RobotControllerAgent : Agent
         {
             AddReward(reward);
         }
-            //EndEpisode();
+        else
+        {
             cur_run.objectHit = true;
+        }
+         if (trainingMode)
+            EndEpisode();
+         else
             UpdateNearestComponent();
       }
    }
