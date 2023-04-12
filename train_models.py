@@ -11,3 +11,4 @@ for i in range(startConfig, endConfig):
     #os.system("mlagents-learn " + config + " --run-id " + f'{i:06}'  + " --resume")
     time.sleep(10)
 
+

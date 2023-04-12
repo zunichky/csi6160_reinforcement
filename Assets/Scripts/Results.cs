@@ -20,6 +20,7 @@ public class EnvironmentInstance {
     public bool objectHit = false;
     public bool groundHit = false;
     public bool selfHit = false;
+    public bool maxSteps = false;
     
     public EnvironmentInstance(Vector3 cur_target)
     {
@@ -29,7 +30,8 @@ public class EnvironmentInstance {
     public void PrintResults()
     {
         Debug.LogWarning(target.x.ToString() + ',' + target.y.ToString() + ',' + target.z.ToString() + ',' 
-            + totalMovements.ToString() + ',' + objectHit.ToString() + ',' + groundHit.ToString() + ',' + selfHit.ToString());
+            + totalMovements.ToString() + ',' + objectHit.ToString() + ',' + groundHit.ToString() + ',' + 
+            selfHit.ToString() + ',' + maxSteps.ToString());
     }
     public void WriteResults(string path)
     {
@@ -38,13 +40,14 @@ public class EnvironmentInstance {
             // Create a file to write to.
             using (StreamWriter sw = File.CreateText(path))
             {
-                sw.WriteLine("X,Y,Z,MovementCount,ObjectHit,GroundHit,SelfHit");
+                sw.WriteLine("X,Y,Z,MovementCount,ObjectHit,GroundHit,SelfHit,MaxSteps");
             }
         }
         using (StreamWriter writer = File.AppendText(path))
         {
             writer.WriteLine(target.x.ToString() + ',' + target.y.ToString() + ',' + target.z.ToString() + ','
-            + totalMovements.ToString() + ',' + objectHit.ToString() + ',' + groundHit.ToString() + ',' + selfHit.ToString());
+            + totalMovements.ToString() + ',' + objectHit.ToString() + ',' + groundHit.ToString() + ',' + 
+            selfHit.ToString() + ',' + maxSteps.ToString());
         }
     }
 }
