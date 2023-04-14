@@ -36,6 +36,7 @@ public class RobotControllerAgent : Agent
 
    public Results results = new Results();
     public EnvironmentInstance cur_run = null;
+    private float timeStart;
    private void Start()
    {
       
@@ -58,6 +59,7 @@ public class RobotControllerAgent : Agent
 
    public override void OnEpisodeBegin()
    {
+      timeStart = Time.time;
       rotateCompelete = true;
 
       //if(trainingMode)
@@ -169,9 +171,10 @@ public class RobotControllerAgent : Agent
          Quaternion.AngleAxis(angles[3] * 90f, armAxes[3].GetComponent<Axis>().rotationAxis), rotateTune * Time.deltaTime);
       armAxes[4].transform.localRotation = Quaternion.RotateTowards(armAxes[4].transform.localRotation,  
          Quaternion.AngleAxis(angles[4] * 90f, armAxes[4].GetComponent<Axis>().rotationAxis), rotateTune * Time.deltaTime);
-
+ 
       if (trainingMode)
       {
+         AddReward(-(Time.time - timeStart) * .3f);
          float distance = Vector3.Distance(endEffector.transform.TransformPoint(Vector3.zero),
             nearestComponent.transform.position);
          float diff = beginDistance - distance;
