@@ -34,3 +34,9 @@ source venv/bin/activate
 mlagents-learn trainer_config.yaml --run-id custom_train
 ```
 In robotcontroller, make sure train is selected. There is also a scene that will train a farm of robots
+
+## Viewing Data
+```
+cd results_final_top
+tensorboard --logdir results
+```
